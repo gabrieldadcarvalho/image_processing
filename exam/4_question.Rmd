@@ -4,7 +4,6 @@ pdf_document:
   number_sections: true
   dev: png
 author: "Gabriel D'assumpção de Carvalho"
-date: "2024-12-09"
 output:
   bookdown::pdf_document2:
     number_sections: true
@@ -18,7 +17,30 @@ header-includes: |
   \usepackage{amsmath}
   \usepackage{fancyhdr}  % Adiciona pacotes para cabeçalhos e rodapés personalizados
   \pagestyle{fancy}
-  \fancyhead[L]{Resumo do Actuar}
+  \fancyhead[L]{1º Prova}
   \fancyfoot[C]{Página \thepage}
   \fancyhead[C]{}
 ---
+
+```{r setup, include=FALSE}
+library(png)
+```
+
+# 4 Questões
+
+Primeiro vamos carregar a imagem que vai ser utilizada.
+
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/gabrieldadcarvalho/image_processing/main/exam/my_picuture.png"
+
+temp_file <- tempfile(fileext = ".png")
+
+download.file(url, temp_file, mode = "wb")
+img <- png::readPNG(temp_file)
+unlink(temp_file)
+
+plot(img, axes = FALSE, xaxs = "i", yaxs = "i")
+```
+
