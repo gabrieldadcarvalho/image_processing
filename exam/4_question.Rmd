@@ -1,0 +1,24 @@
+---
+pdf_document:
+  fig_caption: true
+  number_sections: true
+  dev: png
+author: "Gabriel D'assumpção de Carvalho"
+date: "2024-12-09"
+output:
+  bookdown::pdf_document2:
+    number_sections: true
+    toc: true         # Gera o sumário automaticamente
+    toc_depth: 2      # Limita o sumário a dois níveis
+  pdf_document: default
+title: 'Primeira Prova de Processamento de Imagens'
+params:
+  digits: 4
+header-includes: |
+  \usepackage{amsmath}
+  \usepackage{fancyhdr}  % Adiciona pacotes para cabeçalhos e rodapés personalizados
+  \pagestyle{fancy}
+  \fancyhead[L]{Resumo do Actuar}
+  \fancyfoot[C]{Página \thepage}
+  \fancyhead[C]{}
+---
