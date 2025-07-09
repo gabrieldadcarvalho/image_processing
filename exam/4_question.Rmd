@@ -48,7 +48,7 @@ A imagem é carregada com a biblioteca `png`. Como possui três canais (RGB), fo
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 getwd()
 
-img <- readPNG('image_processing/exam/my_picture.png')
+img <- readPNG('my_picture.png')
 N <- dim(img)[1]
 print("Dimensões da imagem:")
 dim(img)
