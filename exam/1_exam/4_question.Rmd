@@ -27,7 +27,7 @@ header-includes: |
 # Bibliotecas
 
 ```{r, message=FALSE, warning=FALSE}
-#install.packages("png")
+# install.packages("png")
 
 set.seed(42)
 
@@ -44,17 +44,16 @@ Nesta atividade, trabalhamos com uma imagem em tons de cinza, adicionamos ruído
 
 A imagem é carregada com a biblioteca `png`. Como possui três canais (RGB), foi convertida para tons de cinza pela média dos canais e padronizada para o intervalo [0, 1].
 
-
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 getwd()
 
-img <- readPNG('my_picture.png')
+img <- readPNG("my_picture.png")
 N <- dim(img)[1]
 print("Dimensões da imagem:")
 dim(img)
 
 # Padronizando a imagem para [0, 1]
-img = (img - min(img)) / (max(img) - min(img)) 
+img <- (img - min(img)) / (max(img) - min(img))
 ```
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
@@ -69,7 +68,7 @@ print("Dimensões da imagem em tons de cinza:")
 dim(imGray)
 
 # Padronizando a imagem para [0, 1]
-imGray = (imGray - min(imGray)) / (max(imGray) - min(imGray))
+imGray <- (imGray - min(imGray)) / (max(imGray) - min(imGray))
 ```
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
@@ -89,12 +88,14 @@ print("Dimensões da imagem com ruído gamma:")
 dim(imGrayG)
 
 # Padronizando a imagem com ruído gamma para [0, 1]
-imGrayG = (imGrayG - min(imGrayG)) / (max(imGrayG) - min(imGrayG))
+imGrayG <- (imGrayG - min(imGrayG)) / (max(imGrayG) - min(imGrayG))
 ```
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
-image(t(apply(imGrayG, 2, rev)), col = gray.colors(256), axes = FALSE, 
-      main = "Imagem com ruído gamma")
+image(t(apply(imGrayG, 2, rev)),
+  col = gray.colors(256), axes = FALSE,
+  main = "Imagem com ruído gamma"
+)
 ```
 
 Podemos ver que perdemos quase completamente a informação da imagem original a olho nu, sendo possível reconhecer apenas alguns contornos da imagem. Agora vamos definir e aplicar a transformada de Fourier 2d para aplicar um filtro passa-baixa.
@@ -104,7 +105,6 @@ Podemos ver que perdemos quase completamente a informação da imagem original a
 Ao aplicar a transformada de Fourier 2D vai ser possível notar que a energia da imagem se concentra no canto superior esquerdo. Isso é característico da componente DC (média da imagem), que foi vai ser centralizado usando o `ffshift`.
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
-
 df2d <- function(mat) {
   # mat: Imagem
   M <- nrow(mat)
@@ -156,9 +156,11 @@ F <- df2d(imGrayG)
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 # Visualizando a transformada de Fourier 2d
-image(t(apply(log(abs(F) + 1), 2, rev)), col = gray.colors(256), 
-      axes = FALSE, 
-      main = "Transformada de Fourier 2d")
+image(t(apply(log(abs(F) + 1), 2, rev)),
+  col = gray.colors(256),
+  axes = FALSE,
+  main = "Transformada de Fourier 2d"
+)
 ```
 
 Pode-se ver que após aplicar a transformada de Fourier 2d, conseguimos ver a energia mais forte no canto superior esquerdo da imagem, o elemento (0, 0) representa a energia DC (Direct Current), que é a média da imagem. Agora vamos aplicar um ffshift para centralizar a energia DC no meio da imagem.
@@ -177,8 +179,10 @@ F_shifted <- ffshift(F)
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 # Visualizando a transformada de Fourier 2d com ffshift
-image(t(apply(log(abs(F_shifted) + 1), 2, rev)), col = gray.colors(256), axes = FALSE, 
-      main = "Transformada de Fourier 2d com ffshift")
+image(t(apply(log(abs(F_shifted) + 1), 2, rev)),
+  col = gray.colors(256), axes = FALSE,
+  main = "Transformada de Fourier 2d com ffshift"
+)
 ```
 
 Agora vamos aplicar um filtro passa-baixa, zerando as frequências acima a uma distância de 20 pixels/raios do DC.
@@ -220,8 +224,10 @@ F_filtered <- ffshift(F_filtered)
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 # Visualizando a transformada de Fourier 2d filtrada
-image(t(apply(log(abs(F_filtered) + 1), 2, rev)), col = gray.colors(256), axes = FALSE, 
-      main = "Transformada de Fourier 2d filtrada")
+image(t(apply(log(abs(F_filtered) + 1), 2, rev)),
+  col = gray.colors(256), axes = FALSE,
+  main = "Transformada de Fourier 2d filtrada"
+)
 ```
 
 Ao aplicar o filtro passa-baixa e refazer o ffshift, podemos ver que as altas frequências foram zeradas, por condna disso a imagem da transformada de Fourier 2d filtrada mostra apenas as baixas frequências, que são os valores das bordas diferente do tom de cinze.
@@ -230,7 +236,7 @@ Ao aplicar o filtro passa-baixa e refazer o ffshift, podemos ver que as altas fr
 imGrayFiltered <- idf2d(F_filtered)
 
 # Padronizando a imagem filtrada para [0, 1]
-imGrayFiltered = (imGrayFiltered - min(imGrayFiltered)) / 
+imGrayFiltered <- (imGrayFiltered - min(imGrayFiltered)) /
   (max(imGrayFiltered) - min(imGrayFiltered))
 ```
 
@@ -251,4 +257,3 @@ image(
 ```
 
 Depois de aplicar o filtro passa-baixa, podemos ver que a imagem apresentou uma melhora na visualização do contorno, apresentando um pouco do aspecto humano da imagem original, podendo ser percebido apenas com a visualização previa da imagem original.
-
