@@ -1,5 +1,5 @@
 ---
-title: 'Segumda Prova de Processamento de Imagens'
+title: 'Segunda Prova de Processamento de Imagens'
 author: "Gabriel D'assumpção de Carvalho"
 date: "`r Sys.Date()`"
 output:
@@ -68,11 +68,11 @@ Nesta atividade, trabalharemos com duas imagens convertidas para escala de cinza
 A imagem é carregada com a biblioteca `png`. Como possui três canais (RGB), foi convertida para tons de cinza pela média dos canais e padronizada para o intervalo [0, 1].
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
-# books <- image_read(paste(getwd(), "books.jpeg", sep = "/"))
-# cobogo <- image_read(paste(getwd(), "cobogo.jpeg", sep = "/"))
+url_books <- "https://raw.githubusercontent.com/gabrieldadcarvalho/image_processing/main/exam/2_exam/livros.jpeg"
+url_cobogo = "https://raw.githubusercontent.com/gabrieldadcarvalho/image_processing/main/exam/2_exam/cobogo.jpeg"
 
-books <- image_read("/home/gabrieldadcarvalho/github/image_processing/exam/2_exam/livros.jpeg")
-cobogo <- image_read("/home/gabrieldadcarvalho/github/image_processing/exam/2_exam/cobogo.jpeg")
+books <- image_read(url_books)
+cobogo <- image_read(url_cobogo)
 
 # Diminuindo a resolução das imagens
 books <- image_scale(books, "10%")
@@ -88,6 +88,7 @@ print("Dimensões das imagens:")
 print(paste("Livros:", paste(dim(books), collapse = " x ")))
 print(paste("Cobogó:", paste(dim(cobogo), collapse = " x ")))
 ```
+
 Podemos notar que as imagens possuem dimensões diferentes, sendo `books` com dimensões 79x74x3 e `cobogo` com dimensões 80x79x3. Com isso, vamos padronizar as imagens converter a imagem em tons de cinza utilizadno a média entre os três canais, aplicar o ruído e padronizar no intervalo [0, 1]. 
 
 ## Processamento das imagens
@@ -212,6 +213,7 @@ contraste_d <- list(
 Para o modelo Quadrado Greco-Latino, foram definidos os quatro fatores (linha, coluna e duas diagonais). Para cada um desses fatores, será utilizado um contraste específico, definido pelos coeficiente $\phi = \begin{pmatrix}
 -3 & -3 & 2 & 2 & 2
 \end{pmatrix}$ com o objetivo de comparar a média dos níveis 1 e 2 com a média dos níveis 3, 4 e 5.
+
 A análise seguirá um procedimento em duas etapas: primeiramente, um teste F-global será aplicado a cada janela de $5\times5$. Somente se este teste for significativo (indicando que os fatores influenciam a intensidade dos pixels), um segundo teste F (teste de forma) será realizado usando o contraste definido. Este segundo passo permite verificar especificamente se existe uma borda na interface entre os níveis 2 e 3 de cada fator.
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
@@ -349,6 +351,7 @@ par(mfrow = c(1, 1))
 ```
 
 A aplicação do modelo à imagem do cobogó, cujo resultado é apresentado à direita, oferece uma avaliação de sua performance em um cenário geométrica poligonal. O mapa de bordas evidencia a tentativa do método em delinear a estrutura quadradas do cobogó, capturando seus contornos com precisão.
+
 Contudo, a sensibilidade do algoritmo também leva à detecção de falsos positivos. Além do ruído gaussiano, uma fonte primária de erro advém dos gradientes de intensidade gerados pelo fundo visível através dos vãos da estrutura. Esses padrões, contrários ao cobogó em si, são interpretados pelo modelo como bordas locais, resultando em detecções espúrias.
 
 ### Dois Janelamento Aleatórios
@@ -436,32 +439,33 @@ par(mfrow = c(1, 1))
 Na imagem acima podemos observar as duas janelas de $5\times5$ escolhidas aleatoriamente na imagem de livros. Sendo a primeira imagem localizada entre o primeiro (Drácula) e o segundo livro (Frankenstein) da esquerda para a direita, e a segunda imagem localizada na lombada do último livro (Fundação). Com isso, vamos aplicar o modelo Quadrado Greco-Latino para cada uma dessas janelas, a fim de verificar se os fatores influenciam a intensidade dos pixels.
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
+set.seed(42)
 # Livros
 fit_books1 <- lm(y ~ a + b + t + d, data = df1)
 fit_books2 <- lm(y ~ a + b + t + d, data = df2)
 ```
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 print("Livros - Janela 1")
-summary(fit_books1)
+cat(capture.output(summary(fit_books1)), sep = "\n")
 ```
 
-A análise da primeira janela aleatória revela um resultado estatístico digno de nota. Inicialmente, ao se inspecionar os coeficientes individuais do modelo, os fatores de linha (`a`) e coluna (`b`) parecem ser os que mais contribuem para a variabilidade da imagem. Especificamente, os níveis $a_1$, $a_4$ (referentes às linhas 1 e 4) e $b_3$ (coluna 3) foram os que apresentaram os p-valores mais baixos.
+A análise da primeira janela aleatória revela um resultado estatístico digno de nota. Inicialmente, ao se inspecionar os coeficientes individuais do modelo, os fatores de linha (`a`) e coluna (`b`) parecem ser os que mais contribuem para a variabilidade da imagem. Especificamente, os níveis $a_2$, $a_4$ (referentes às linhas 1 e 4) e $b_3$ (coluna 3) foram os que apresentaram os p-valores mais baixos.
 
 Essa observação é consistente com o conteúdo visual da janela: a coluna 3 pode estar capturando a transição da capa escura de *Drácula* para a mais clara de *Frankenstein*, ou possivelmente um detalhe escuro no design da lombada deste último. As linhas 1 e 4, por sua vez, podem corresponder às variações de intensidade causadas pelos elementos gráficos nas lombadas.
 
-Entretanto, a análise decisiva vem do teste F-global, que avalia a significância do modelo como um todo. Este teste resultou em um p-valor de aproximadamente 0,1044 (10,44%). Como este valor está acima do nível de significância predefinido ($\alpha = 0.05$), a hipótese nula não pode ser rejeitada. Conclui-se, portanto, que não há evidências estatísticas suficientes para afirmar que os fatores, em conjunto, influenciam a intensidade dos pixels nesta janela específica.
+Entretanto, a análise decisiva vem do teste F-global, que avalia a significância do modelo como um todo. Este teste resultou em um p-valor de aproximadamente 0,15 (15%). Como este valor está acima do nível de significância predefinido ($\alpha \approx 0.05$), a hipótese nula não pode ser rejeitada. Conclui-se, portanto, que não há evidências estatísticas suficientes para afirmar que os fatores, em conjunto, influenciam a intensidade dos pixels nesta janela específica.
 
 A hipótese mais provável para essa aparente contradição é a localização da janela $5\times5$. Como pode ser visualizado na figura da Janela 1, ela cobre uma área predominantemente homogênea na capa do livro *Frankenstein*, o que provavelmente dilui o efeito das poucas bordas estruturadas presentes, levando à não significância do modelo como um todo.
 
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 print("Livros - Janela 2")
-summary(fit_books2)
+cat(capture.output(summary(fit_books2)), sep = "\n")
 ```
 
 Em contrapartida, a análise da segunda janela aleatória apresenta um resultado marcadamente diferente e conclusivo. Neste caso, observou-se que todos os níveis do fator coluna (`b`) são estatisticamente significativos, com p-valores individuais abaixo de 0.01 (1%). Isso indica uma forte variação na intensidade dos pixels ao longo das colunas da janela.
 
-Confirmando essa forte evidência, o teste F-global do modelo resultou em um p-valor extremamente baixo, de aproximadamente 0.0014 (0.14%). Estando bem abaixo do nível de significância ($\alpha = 0.05$), a hipótese nula é rejeitada com segurança. Conclui-se, portanto, que os fatores, em conjunto, exercem uma influência significativa na intensidade dos pixels desta janela.
+Confirmando essa forte evidência, o teste F-global do modelo resultou em um p-valor extremamente baixo, de aproximadamente 0.00004. Estando bem abaixo do nível de significância ($\alpha = 0.05$), a hipótese nula é rejeitada com segurança. Conclui-se, portanto, que os fatores, em conjunto, exercem uma influência significativa na intensidade dos pixels desta janela.
 
 A localização da Janela 2 explica claramente esses resultados. Ela está posicionada sobre a lombada do livro *Fundação*, abrangendo tanto o design gráfico do título quanto uma porção do fundo preto à esquerda. A presença dessas texturas contrastantes, os detalhes do design e a transição para o fundo escuro, cria fortes gradientes verticais que são eficientemente capturados pelo modelo como efeitos de coluna altamente significativos.
 
@@ -544,26 +548,28 @@ Para a análise da imagem do cobogó, foi adotada a mesma metodologia de amostra
 A primeira janela incide sobre uma intersecção dos eixos ortogonais do cobogó. Para esta região de alta complexidade geométrica, a hipótese é que, além dos efeitos de linha e coluna, os fatores diagonais também se mostrem estatisticamente significativos.
 
 Em forte contraste, a segunda janela foi posicionada sobre uma área de concreto com textura visivelmente homogênea. Este segundo caso serve como um importante controle, onde a expectativa é que o modelo não encontre mudanças significativas na intensidade dos pixels, demonstrando assim sua capacidade de distinguir regiões uniformes de regiões com bordas estruturadas.
+
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 # Cobogó
+set.seed(42)
 fit_cobogo1 <- lm(y ~ a + b + t + d, data = df3)
 fit_cobogo2 <- lm(y ~ a + b + t + d, data = df4)
 ```
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 print("Cobogó - Janela 1")
-summary(fit_cobogo1)
+cat(capture.output(summary(fit_cobogo1)), sep = "\n")
 ```
 
-Os resultados desta janela validam a hipótese inicial de que os efeitos diagonais seriam proeminentes. O teste F-global do modelo é evidentemente significativo ($p ≈ 0.0078$), um resultado impulsionado principalmente pelos fatores de linhas e diagonais. Especificamente, o nível $t_1$ apresentou forte significância ($p ≈ 0.024$), enquanto $d_1$ se mostrou marginalmente significativo ($p ≈ 0.078$).
+Os resultados desta janela validam a hipótese inicial de que os efeitos diagonais seriam proeminentes. O teste F-global do modelo é evidentemente significativo ($p \approx 0.0024$), um resultado impulsionado principalmente pelos fatores de linhas e diagonais. Especificamente, o nível $d_1$ apresentou forte significância ($p \approx 0.026$), enquanto $d_4$ se mostrou marginalmente significativo ($p \approx 0.083$).
 
 Essa combinação de resultados evidencia a capacidade do modelo em capturar a complexa geometria da intersecção do cobogó. A significância geral é atribuída à transição de alta frequência entre a borda sólida da estrutura e seu vão, um padrão que o modelo corretamente identificou como sendo influenciado por múltiplos fatores direcionais.
 
 ```{r, echo=TRUE, results='asis', message=FALSE, warning=FALSE}
 print("Cobogó - Janela 2")
-summary(fit_cobogo2)
+cat(capture.output(summary(fit_cobogo2)), sep = "\n")
 ```
 
-Confirmando o papel desta janela como um caso de controle, os resultados corroboram integralmente a hipótese inicial. A análise da região homogênea de concreto produziu um teste F-global com p-valor de aproximadamente 0.90, um valor que indica ausência total de significância estatística.
+Confirmando o papel desta janela como um caso de controle, os resultados corroboram integralmente a hipótese inicial. A análise da região homogênea de concreto produziu um teste F-global com p-valor de aproximadamente 0.95, um valor que indica ausência total de significância estatística.
 
 Portanto, para esta janela, não há evidências que justifiquem rejeitar a hipótese nula. Este resultado nulo é crucial, pois demonstra a especificidade do método: sua capacidade de corretamente identificar a ausência de estruturas direcionais em áreas de textura uniforme, evitando falsos positivos.
