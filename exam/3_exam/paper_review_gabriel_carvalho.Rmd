@@ -83,12 +83,17 @@ Após o ajuste dos parâmetros, é possível realizar testes de hipótese com ba
   \item Verificar se o conjunto total de parâmetros é diferente do conjunto nulo, ou seja, avaliar se o modelo é estatisticamente significativo.
 \end{enumerate}
 
-# Estimação
+# Predição
 
-Para estimar a intensidade do pixel da imagem, utiliza-se a seguinte função:
+Para predizer a intensidade do pixel da imagem, utiliza-se a seguinte função:
 
 $$
-\hat{\mu}[n, m] = g^{-1}\left(\hat{\beta} + \sum_{i=0}^{p}\sum_{j=0}^{p} \hat{\phi}_{(i,j)}\, g\!\big(y[n-i,\,m-j]\big) + \sum_{k=0}^{q}\sum_{l=0}^{q} \hat{\theta}_{(k,l)}\, e[n-k,\,m-l]\right)
+\hat{\mu}[n, m] =
+\exp\!\left(
+\hat{\beta} +
+\sum_{i=0}^{p}\sum_{j=0}^{p} \hat{\phi}_{i,j}\, \log(y[n-i,\,m-j]) +
+\sum_{k=0}^{q}\sum_{l=0}^{q} \hat{\theta}_{k,l}\, e[n-k,\,m-l]
+\right)
 $$
 
 # Detecção de Anomalia
@@ -201,7 +206,7 @@ A seleção do melhor modelo foi feita com base no teste de Wald, para verificar
 
 O artigo também propôs uma simulação de dados pelo método de Monte Carlo para avaliar as estimativas de cada parâmetro. A simulação consistiu nos seguintes passos:
 
-Considerou-se apenas o modelo RARMA(1, 0), com parâmetros inicialmente estimados a partir de uma imagem que segue a distribuição Rayleigh: $\beta = -0.2031$, $\phi(0,1) = 0.4562$, $\phi(1, 0) = 0.4523$ e $\phi(1,1) = -0.1054$. Esses parâmetros foram tratados como valores verdadeiros. Na primeira simulação, gerou-se uma nova imagem e estimaram-se novamente os parâmetros, comparando-os com os valores verdadeiros. Esse processo foi repetido 1000 vezes, calculando-se a média final dos parâmetros, o viés relativo ($RB = (ValorEstimado - ValorVerdadeiro) / ValorVerdadeiro$), o erro quadrático médio e o intervalo de confiança. Em seguida, verificou-se quantas vezes os parâmetros verdadeiros estavam dentro do intervalo de confiança, obtendo o valor de CR.
+Considerando apenas o modelo RARMA(1, 0), com parâmetros inicialmente estimados a partir de uma imagem que segue a distribuição Rayleigh: $\beta = -0.2031$, $\phi(0,1) = 0.4562$, $\phi(1, 0) = 0.4523$ e $\phi(1,1) = -0.1054$. Esses parâmetros foram tratados como valores verdadeiros. Na primeira simulação, gerou-se uma nova imagem e estimaram-se novamente os parâmetros, comparando-os com os valores verdadeiros. Esse processo foi repetido 1000 vezes, calculando-se a média final dos parâmetros, o viés relativo ($RB = (ValorEstimado - ValorVerdadeiro) / ValorVerdadeiro$), o erro quadrático médio e o intervalo de confiança. Em seguida, verificou-se quantas vezes os parâmetros verdadeiros estavam dentro do intervalo de confiança, obtendo o valor de CR.
 
 ```{r, out.width='60%', fig.align='center', echo=FALSE}
 knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/table_1.png")
