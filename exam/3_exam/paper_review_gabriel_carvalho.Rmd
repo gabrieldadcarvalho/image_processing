@@ -1,5 +1,5 @@
 ---
-title: "Resenha artigo:"
+title: "3º Exame de Processamento de Imagens:"
 subtitle: "2-D Rayleigh autoregressive moving average model for SAR image modeling"
 author: "Gabriel D'assumpção de Carvalho"
 date: "`r Sys.Date()`"
