@@ -1,0 +1,256 @@
+---
+title: "Resenha artigo:"
+subtitle: "2-D Rayleigh autoregressive moving average model for SAR image modeling"
+author: "Gabriel D'assumpção de Carvalho"
+date: "`r Sys.Date()`"
+output:
+  bookdown::pdf_document2:
+    number_sections: true
+    toc: true
+    toc_depth: 2
+    fig_caption: true
+    dev: png
+    keep_tex: true
+    citation_package: natbib
+always_allow_html: true
+knitr:
+  opts_chunk:
+    dev: "png"
+    dpi: 300
+    fig.align: "center"
+    fig.width: 7
+    fig.height: 5
+    echo: true
+    warning: false
+    message: false
+    screenshot.force: true
+header-includes: |
+  \usepackage{amsmath}
+  \usepackage{fancyhdr}
+  \usepackage{listings}
+  \usepackage{xcolor}
+  \usepackage{fvextra}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
+      breaksymbolleft={},
+      showspaces = false,
+      showtabs = false,
+      breaklines,
+      commandchars=\\\{\}
+    }
+  \pagestyle{fancy}
+  \fancyhead[L]{2º Prova}
+  \fancyfoot[C]{Página \thepage}
+  \fancyhead[C]{}
+bibliography: export.bib
+params:
+  digits: 4
+---
+
+# Modelo
+
+No artigo "2-D Rayleigh autoregressive moving average model for SAR image modeling", os autores propõem um modelo autorregressivo e de média móvel bidimensional (2-D ARMA) para modelar imagens de radar de abertura sintética (SAR). Assume-se que as amplitudes seguem a distribuição Rayleigh, adequada por ser estritamente positiva e assimétrica, características compatíveis com sinais SAR.
+
+O modelo é formulado como um GLM espacial com função de ligação logarítmica, resultando no 2-D RARMA(p, q). No caso RARMA(1,1), tem-se:
+
+$$
+g(\mu[n,m]) \;=\; \beta \;+\; \sum_{i=0}^{p}\sum_{j=0}^{p} \phi_{(i,j)}\, g\!\big(y[n-i,\,m-j]\big)
+\;+\; \sum_{k=0}^{q}\sum_{l=0}^{q} \theta_{(k,l)}\, e[n-k,\,m-l],
+$$
+
+com \(g(\cdot)=\log(\cdot)\), em que:
+\begin{itemize}
+  \item \(g(\mu[n,m])\) é a média sob a ligação logarítmica;
+  \item \(\beta\) é o intercepto;
+  \item \(\phi_{(i,j)}\) são os parâmetros de autocorrelação espacial (parte AR);
+  \item \(\theta_{(k,l)}\) são os parâmetros de média móvel espacial (parte MA);
+  \item \(y[\cdot,\cdot]\) são os valores observados da imagem e \(e[\cdot,\cdot]\) os resíduos.
+\end{itemize}
+
+Como a distribuição Rayleigh tem suporte em \(\mathbb{R}^+\), a ligação log garante predições positivas, coerentes com a natureza das intensidades de radar.
+
+Os modelos analisados incluem o 2-D RARMA(1,1), com parâmetros \(\phi_{(0,1)}, \phi_{(1,0)}, \phi_{(1,1)}\) e \(\theta_{(0,1)}, \theta_{(1,0)}, \theta_{(1,1)}\), e o 2-D RARMA(1,0), que retém apenas a componente autorregressiva, descartando a média móvel.
+
+A estimação dos parâmetros é realizada por máxima verossimilhança condicional (CMLE), maximizando o logaritmo da densidade condicional Rayleigh em relação a cada parâmetro. O número total de parâmetros do modelo RARMA(p, q) é dado por $( (p+1)^2 + (q+1)^2 - 1)$.  
+
+As predições são obtidas na submatriz de dimensões $( (N - w) \times (M - w))$, onde $( N \times M)$ representa o tamanho da imagem original e $(w = \max(p, q))$; as bordas não são estimadas devido à insuficiência de vizinhança para a recursão.
+
+# Teste de hipótese
+
+Após o ajuste dos parâmetros, é possível realizar testes de hipótese com base na estatística de Wald. Os principais testes possíveis são:
+
+\begin{enumerate}
+  \item Verificar se um conjunto $\lambda_l$ de parâmetros, com dimensão $d$, é diferente do conjunto de parâmetros nulos $\lambda_{l0}$.
+  \item Verificar se o conjunto total de parâmetros é diferente do conjunto nulo, ou seja, avaliar se o modelo é estatisticamente significativo.
+\end{enumerate}
+
+# Estimação
+
+Para estimar a intensidade do pixel da imagem, utiliza-se a seguinte função:
+
+$$
+\hat{\mu}[n, m] = g^{-1}\left(\hat{\beta} + \sum_{i=0}^{p}\sum_{j=0}^{p} \hat{\phi}_{(i,j)}\, g\!\big(y[n-i,\,m-j]\big) + \sum_{k=0}^{q}\sum_{l=0}^{q} \hat{\theta}_{(k,l)}\, e[n-k,\,m-l]\right)
+$$
+
+# Detecção de Anomalia
+
+Com as estimativas dos parâmetros do modelo e a estimação da intensidade do pixel, é possível detectar anomalias na imagem. Assume-se que os resíduos \(e[n, m]\) seguem uma distribuição normal com média zero e variância unitária. Assim, define-se o intervalo [-3, 3], pois 99,7% dos valores devem estar nesse intervalo. Estimações com resíduos fora desse intervalo são consideradas anômalas.
+
+Além disso, foi proposto um pré-processamento da imagem para ajustar quatro modelos, cada um capturando a influência de uma direção específica: noroeste, nordeste, sudeste e sudoeste. Esse procedimento é realizado aplicando rotações de 90° na imagem.
+
+## Algoritmo
+
+A seguir, exemplifica-se o funcionamento do algoritmo de detecção de anomalias:
+
+\begin{enumerate}
+  \item Considera-se uma imagem fictícia de 100x100 pixels;
+  \item Escolhe-se uma janela de tamanho \(N \times M\);
+  \item Rotaciona-se \(k\) vezes a janela em 90º;
+  \item Estima-se o modelo para essa janela;
+  \item Prediz-se o valor do pixel central;
+  \item Calcula-se o resíduo entre a estimação e o valor observado;
+  \item Verifica-se se o resíduo está dentro ou fora do intervalo \([-3, 3]\).
+\end{enumerate}
+
+Dada uma imagem de 100x100:
+
+```{r, echo=FALSE}
+img <- t(matrix(1:100, 10))
+print(img)
+```
+
+Escolhendo uma janela de tamanho 3x3 para exemplificar o algoritmo:
+
+```{r, echo=FALSE}
+imgSelect <- img[1:3, 1:3]
+print(imgSelect)
+```
+
+Em seguida, realizam-se três rotações de 90º para capturar a influência das direções *northwest*, *northeast*, *southeast* e *southwest*:
+
+```{r, echo=FALSE}
+# Northwest
+imgNW <- imgSelect
+print("Northwest")
+print(imgNW)
+
+# Northeast
+imgNE <- apply(t(imgSelect), 2, rev)
+print("Northeast")
+print(imgNE)
+
+# Southeast
+imgSE <- apply(t(imgNE), 2, rev)
+print("Southeast")
+print(imgSE)
+
+# Southwest
+imgSW <- apply(t(imgSE), 2, rev)
+print("Southwest")
+print(imgSW)
+```
+
+Após as rotações e a estimação do modelo, cada previsão de pixel é comparada ao valor real.  
+
+\begin{itemize}
+  \item Se o resíduo for maior que 3 ou menor que -3, o pixel recebe valor 0 (branco).
+  \item Caso contrário, recebe valor 1 (preto).
+\end{itemize}
+
+Cada pixel terá quatro estimativas, uma para cada direção. Ao final:  
+
+\begin{itemize}
+  \item Se pelo menos uma das matrizes apresentar valor 1, o pixel é considerado \textbf{normal}.
+  \item Se todas apresentarem 0, o pixel é considerado \textbf{anômalo}.
+\end{itemize}
+
+Exemplo:
+
+```{r, echo=FALSE}
+set.seed(42)
+
+# Matrizes 0/1
+eNW <- matrix(sample(c(0, 1), 9, replace = TRUE), nrow = 3, ncol = 3)
+eNE <- matrix(sample(c(0, 1), 9, replace = TRUE), nrow = 3, ncol = 3)
+eSE <- matrix(0, nrow = 3, ncol = 3)
+eSW <- matrix(0, nrow = 3, ncol = 3)
+
+print("Matriz NW")
+print(eNW)
+print("Matriz NE")
+print(eNE)
+print("Matriz SE")
+print(eSE)
+print("Matriz SW")
+print(eSW)
+
+mFinal <- (eNW + eNE + eSE + eSW) > 0
+mFinal <- matrix(as.integer(mFinal), nrow = 3, ncol = 3)
+print("Matriz de Detecção Final")
+print(mFinal)
+```
+
+Com isso, a detecção de anomalias, neste exemplo, identificaria que os pixels (1, 2) e (2, 1) são anômalos.
+
+# Resultados dos modelos
+
+O artigo apresentou os resultados dos modelos 2-D RARMA(1, 0) e 2-D RARMA(1, 1), considerando dados simulados a partir do método de geração inversa da distribuição Rayleigh. Observou-se que o modelo sem médias móveis apresentou melhor desempenho para as métricas de viés relativo total e quadrado da média do erro, nos tamanhos de amostra $10\times10$, $20\times20$, $40\times40$ e $80\times80$. Para ambos os modelos, verificou-se redução dessas métricas com o aumento do tamanho da amostra.
+
+A seleção do melhor modelo foi feita com base no teste de Wald, para verificar se os parâmetros são significativamente diferentes de zero, analisar se os resíduos se distribuem aleatoriamente em torno de zero e comparar as métricas MSE e erro percentual absoluto médio (MAPE).
+
+## Simulação
+
+O artigo também propôs uma simulação de dados pelo método de Monte Carlo para avaliar as estimativas de cada parâmetro. A simulação consistiu nos seguintes passos:
+
+Considerou-se apenas o modelo RARMA(1, 0), com parâmetros inicialmente estimados a partir de uma imagem que segue a distribuição Rayleigh: $\beta = -0.2031$, $\phi(0,1) = 0.4562$, $\phi(1, 0) = 0.4523$ e $\phi(1,1) = -0.1054$. Esses parâmetros foram tratados como valores verdadeiros. Na primeira simulação, gerou-se uma nova imagem e estimaram-se novamente os parâmetros, comparando-os com os valores verdadeiros. Esse processo foi repetido 1000 vezes, calculando-se a média final dos parâmetros, o viés relativo ($RB = (ValorEstimado - ValorVerdadeiro) / ValorVerdadeiro$), o erro quadrático médio e o intervalo de confiança. Em seguida, verificou-se quantas vezes os parâmetros verdadeiros estavam dentro do intervalo de confiança, obtendo o valor de CR.
+
+```{r, out.width='60%', fig.align='center', echo=FALSE}
+knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/table_1.png")
+```
+
+Como podemos ver acima, quanto menor a amostra, maior é a variabilidade das estimativas dos parâmetros. Observa-se que uma amostra de $40\times40$ já é suficientemente grande, apresentando apenas o parâmetro $\phi(1,0)$ com maior variabilidade, estando o valor verdadeiro dentro do intervalo de confiança em 94,4% das repetições.
+
+# Dados reais
+
+Uma das aplicações do modelo foi realizada em uma imagem capturada pelo radar CARABAS II SAR, retirada de uma floresta, contendo 25 caminhões do exército, visíveis no canto superior esquerdo da imagem como 25 pontos brancos.
+
+```{r, out.width='30%', fig.align='center', echo=FALSE}
+knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/carabas.png")
+```
+
+O modelo estimado foi o seguinte:
+
+```{r, out.width='70%', fig.align='center', echo=FALSE}
+knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/table_03.png")
+```
+
+Podemos observar na tabela acima que os quatro modelos, referentes às quatro direções, apresentaram valores-p inferiores a 0,1% e erro padrão máximo de 0,0892. Analisando cada modelo isoladamente:  
+
+\begin{itemize}
+
+  \item O modelo NW mostrou maior correlação no parâmetro $(\phi_{(1,1)})$, correspondente ao elemento $(n-1, m-1)$, com valor 0,1935.
+
+  \item No modelo SW, a maior correlação foi no parâmetro $(\phi_{(1,0)})$, relativo à correlação entre o pixel $(n, m-1)$, com valor 0,2206.  
+
+  \item Para o modelo SE, o parâmetro $(\phi_{(0,1)})$ apresentou a maior correlação, elemento $(n, m+1)$, com valor 0,2218.
+
+  \item Por fim, o modelo NE teve maior correlação no parâmetro $(\phi_{(0,1)})$, correspondente ao pixel $(n-1, m)$, com valor 0,1906.
+
+\end{itemize}
+
+Os resíduos dos modelos podem ser observados na imagem abaixo, evidenciando que estão distribuídos em torno de zero e dentro do intervalo [-3, 3], com algumas observações fora desse intervalo.
+
+```{r, out.width='70%', fig.align='center', echo=FALSE}
+knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/fig_04.png")
+```
+
+Em seguida, aplicou-se o algoritmo de detecção de anomalias apresentado anteriormente, resultando na imagem a seguir:
+
+```{r, out.width='70%', fig.align='center', echo=FALSE}
+knitr::include_graphics("/home/gabrieldadcarvalho/github/image_processing/exam/3_exam/fig_05.png")
+```
+
+No lado esquerdo, observa-se que o modelo 2-D RARMA(1, 1) detectou corretamente 24 dos 25 caminhões, mas apresentou 5 erros do tipo I. Já o modelo 2-D ARMA(1, 1), que assume distribuição gaussiana, detectou 16 dos 25 caminhões e apresentou 2 erros do tipo I.  
+
+Esses resultados confirmam as vantagens do modelo 2-D RARMA para detecção de anomalias em imagens SAR conforme discutido por Palm et al. (@Palm2022).
+
+# Referências
